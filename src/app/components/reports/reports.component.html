@@ -1,0 +1,275 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">📊 Reports & Analytics</h1>
+      <p class="text-gray-600 text-sm md:text-base">Comprehensive business intelligence for data-driven decisions</p>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="bg-white rounded-xl p-4 md:p-6 mb-6 shadow-md border border-gray-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 items-end">
+        <!-- From Date -->
+        <div>
+          <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2"> From Date </label>
+          <input
+            type="date"
+            [(ngModel)]="fromDate"
+            (change)="onDateChange()"
+            class="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+          />
+        </div>
+
+        <!-- To Date -->
+        <div>
+          <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2"> To Date </label>
+          <input
+            type="date"
+            [(ngModel)]="toDate"
+            (change)="onDateChange()"
+            class="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+          />
+        </div>
+
+        <!-- Distributor Filter -->
+        <div>
+          <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Distributor</label>
+          <select
+            [(ngModel)]="selectedDistributorId"
+            (change)="onDateChange()"
+            class="w-full px-3 md:px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+          >
+            <option [ngValue]="null">All Distributors</option>
+            @for (dist of distributors(); track dist.userId) {
+              <option [ngValue]="dist.userId">{{ dist.businessName || dist.user?.firstName + ' ' + dist.user?.lastName }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Quick Filter Buttons -->
+        <div class="flex gap-2 col-span-1 md:col-span-2 lg:col-span-1">
+          <button
+            (click)="setTodayRange()"
+            class="flex-1 px-3 md:px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-xs md:text-sm"
+          >
+            Today
+          </button>
+          <button
+            (click)="setWeekRange()"
+            class="flex-1 px-3 md:px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-xs md:text-sm"
+          >
+            Week
+          </button>
+          <button (click)="setMonthRange()" class="flex-1 px-3 md:px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-xs md:text-sm">
+            Month
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Container -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <!-- Tab Navigation - Horizontal Scrollable on Mobile -->
+      <div class="border-b border-gray-200 overflow-x-auto">
+        <div class="flex min-w-full md:min-w-auto">
+          @for (tab of reportTabs; track tab.id) {
+            <button
+              (click)="activeTab.set(tab.id); onDateChange()"
+              [class.border-b-2]="activeTab() === tab.id"
+              [class.border-indigo-600]="activeTab() === tab.id"
+              [class.text-indigo-600]="activeTab() === tab.id"
+              [class.text-gray-600]="activeTab() !== tab.id"
+              [class.bg-indigo-50]="activeTab() === tab.id"
+              class="px-3 md:px-4 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors hover:text-indigo-600"
+            >
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="p-4 md:p-6">
+        <!-- Loading Spinner -->
+        @if (loading()) {
+          <div class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <p class="text-gray-600 mt-4 text-sm md:text-base">Loading report...</p>
+          </div>
+        }
+
+        <!-- Report Content -->
+        @if (!loading() && currentReportData()) {
+          <!-- Download Button -->
+          <div class="flex justify-end mb-4">
+            <button (click)="downloadCSV()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
+              📥 Download CSV
+            </button>
+          </div>
+          <!-- Summary Cards -->
+          @if (currentReportData()?.summary) {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+              @for (item of getReportSummaryItems(); track item.label) {
+                <div class="bg-gradient-to-br p-4 md:p-6 rounded-xl border-l-4 hover:shadow-md transition shadow-sm" [ngClass]="item.cardClass">
+                  <div class="text-gray-600 text-xs md:text-sm font-medium uppercase tracking-wide">
+                    {{ item.label }}
+                  </div>
+                  <div class="text-2xl md:text-3xl font-bold mt-3" [ngClass]="item.valueClass">
+                    {{ item.value }}
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Daily Trend Chart (Special visualization for daily-trend tab) -->
+          @if (activeTab() === 'daily-trend' && dailySalesTrendReport()?.data?.length > 0) {
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 mb-6 border border-indigo-100">
+              <h3 class="text-xl font-bold text-gray-900 mb-6">📈 Daily Sales Trend Graph</h3>
+
+              <!-- Bar Chart Container -->
+              <div class="relative bg-white rounded-lg p-4 shadow-inner border border-gray-200">
+                <!-- Y-Axis Labels -->
+                <div class="absolute left-0 top-4 bottom-12 w-16 flex flex-col justify-between text-xs text-gray-500 text-right pr-2">
+                  <span>₹{{ maxDailySales | number: '1.0-0' }}</span>
+                  <span>₹{{ maxDailySales * 0.75 | number: '1.0-0' }}</span>
+                  <span>₹{{ maxDailySales * 0.5 | number: '1.0-0' }}</span>
+                  <span>₹{{ maxDailySales * 0.25 | number: '1.0-0' }}</span>
+                  <span>₹0</span>
+                </div>
+
+                <!-- Chart Area -->
+                <div class="ml-16 relative h-72">
+                  <!-- Grid Lines -->
+                  <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                    <div class="border-b border-gray-200 border-dashed"></div>
+                    <div class="border-b border-gray-200 border-dashed"></div>
+                    <div class="border-b border-gray-200 border-dashed"></div>
+                    <div class="border-b border-gray-200 border-dashed"></div>
+                    <div class="border-b border-gray-300"></div>
+                  </div>
+
+                  <!-- Bars Container -->
+                  <div class="absolute inset-0 flex items-end justify-around px-2">
+                    @for (day of dailySalesTrendReport()?.data; track day.date; let i = $index) {
+                      <div class="flex flex-col items-center group relative" style="width: 40px">
+                        <!-- Tooltip -->
+                        <div class="absolute bottom-full mb-2 hidden group-hover:block z-20">
+                          <div class="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
+                            <div class="font-bold">{{ formatChartDate(day.date) }}</div>
+                            <div>Sales: ₹{{ day.totalSales | number: '1.2-2' }}</div>
+                            <div>Invoices: {{ day.totalInvoices }}</div>
+                            <div>Customers: {{ day.uniqueCustomers }}</div>
+                          </div>
+                          <div class="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                        </div>
+
+                        <!-- Bar with minimum height for visibility -->
+                        <div
+                          class="w-8 rounded-t-md transition-all duration-300 cursor-pointer hover:opacity-80 bg-gradient-to-t from-indigo-600 to-indigo-400"
+                          [style.height.px]="getBarHeightPx(day.totalSales)"
+                          [class.bg-gray-300]="day.totalSales === 0"
+                        ></div>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- X-Axis Labels -->
+                <div class="ml-16 flex justify-around mt-3 px-2">
+                  @for (day of dailySalesTrendReport()?.data; track day.date) {
+                    <div class="text-center" style="width: 40px">
+                      <span class="text-xs text-gray-600 font-medium">{{ formatChartDate(day.date) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="flex items-center justify-center gap-6 mt-4 text-sm">
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded bg-gradient-to-t from-indigo-600 to-indigo-400"></div>
+                  <span class="text-gray-600">Daily Sales (₹)</span>
+                </div>
+              </div>
+
+              <!-- Summary Stats Below Chart -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div class="bg-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                  <div class="text-2xl font-bold text-indigo-600">₹{{ getTotalSales() | number: '1.0-0' }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Total Sales</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                  <div class="text-2xl font-bold text-purple-600">{{ getTotalInvoices() }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Total Invoices</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                  <div class="text-2xl font-bold text-blue-600">₹{{ getAvgDailySales() | number: '1.0-0' }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Avg Daily Sales</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-sm border border-gray-100">
+                  <div class="text-2xl font-bold text-green-600">{{ getBestDay() }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Best Day</div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Desktop Table View (hidden for daily-trend) -->
+          @if (currentReportData()?.data?.length > 0 && activeTab() !== 'daily-trend') {
+            <div class="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
+              <table class="w-full text-left text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
+                  <tr>
+                    @for (col of getTableColumns(); track col) {
+                      <th class="px-4 py-3 font-semibold text-gray-900">{{ formatColumnHeader(col) }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  @for (row of currentReportData()?.data; track $index) {
+                    <tr class="hover:bg-gray-50 transition">
+                      @for (col of getTableColumns(); track col) {
+                        <td class="px-4 py-3">
+                          <span [ngClass]="getCellClass(col, row)">{{ formatCell(row, col) }}</span>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Mobile Card View (hidden for daily-trend) -->
+            <div class="md:hidden space-y-3">
+              @for (row of currentReportData()?.data; track $index) {
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  @for (col of getTableColumns(); track col) {
+                    <div class="flex justify-between items-start mb-2 pb-2 border-b border-gray-200 last:border-b-0 last:mb-0 last:pb-0">
+                      <span class="text-xs font-semibold text-gray-600">{{ formatColumnHeader(col) }}:</span>
+                      <span [ngClass]="'text-right font-medium ' + getCellClass(col, row)">{{ formatCell(row, col) }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- No Data Message -->
+          @if (!currentReportData()?.data || currentReportData()?.data?.length === 0) {
+            <div class="text-center py-12 text-gray-500">
+              <p class="text-sm md:text-base">No data available for the selected date range</p>
+            </div>
+          }
+        }
+
+        <!-- No Report Selected -->
+        @if (!loading() && !currentReportData()) {
+          <div class="text-center py-12 text-gray-500">
+            <p class="text-sm md:text-base">Select a report to view data</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

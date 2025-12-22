@@ -1,0 +1,72 @@
+<div class="manager-dashboard">
+  <div class="container">
+    <h1>Manager Dashboard</h1>
+
+    <!-- Pending Orders Section -->
+    <div class="section">
+      <h2>Pending Order Approvals</h2>
+      <div *ngIf="loading" class="loading">Loading...</div>
+      <div *ngIf="!loading && pendingOrders.length === 0" class="no-data">
+        No pending orders for approval
+      </div>
+      <div *ngIf="!loading && pendingOrders.length > 0" class="orders-list">
+        <div *ngFor="let order of pendingOrders" class="order-card">
+          <div class="order-header">
+            <h3>{{ order.orderNo }}</h3>
+            <span class="status">Pending Approval</span>
+          </div>
+          <div class="order-details">
+            <p><strong>Customer ID:</strong> {{ order.customerId }}</p>
+            <p><strong>Total Amount:</strong> ₹{{ order.totalAmount | number: '1.2-2' }}</p>
+            <p><strong>Created:</strong> {{ order.createdAt | date }}</p>
+          </div>
+          <div class="order-actions">
+            <button class="btn btn-success" (click)="approveOrder(order.id)">
+              Approve
+            </button>
+            <div class="reject-section">
+              <textarea
+                [(ngModel)]="rejectionReason"
+                placeholder="Enter rejection reason..."
+                class="reason-textarea"
+              ></textarea>
+              <button class="btn btn-danger" (click)="rejectOrder(order.id)">
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Requests Section -->
+    <div class="section">
+      <h2>Payment Pending</h2>
+      <div *ngIf="paymentRequests.length === 0" class="no-data">
+        No pending payment requests
+      </div>
+      <div *ngIf="paymentRequests.length > 0" class="payments-list">
+        <div *ngFor="let payment of paymentRequests" class="payment-card">
+          <div class="payment-header">
+            <h3>Payment #{{ payment.id }}</h3>
+            <span class="amount">₹{{ payment.amount | number: '1.2-2' }}</span>
+          </div>
+          <div class="payment-details">
+            <p><strong>Order ID:</strong> {{ payment.orderId }}</p>
+            <p><strong>Distributor ID:</strong> {{ payment.distributorId }}</p>
+            <p><strong>Status:</strong> {{ payment.status }}</p>
+            <p><strong>Requested:</strong> {{ payment.createdAt | date }}</p>
+          </div>
+          <div class="payment-actions">
+            <button class="btn btn-success" (click)="markPaymentAsPaid(payment.id)">
+              Mark as Paid
+            </button>
+            <button class="btn btn-warning" (click)="requestPayment(payment.id)">
+              Request Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

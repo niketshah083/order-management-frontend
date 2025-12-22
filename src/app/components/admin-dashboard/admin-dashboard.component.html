@@ -1,0 +1,516 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Admin Dashboard</h1>
+      <p class="text-gray-600 mt-1">Business overview at a glance</p>
+    </div>
+    <a
+      routerLink="/analytics"
+      class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+    >
+      <span class="text-lg">📈</span>
+      <span>Analytics Dashboard</span>
+    </a>
+  </div>
+
+  <!-- Loading Spinner -->
+  @if (loading) {
+    <div class="flex items-center justify-center py-12">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <p class="mt-3 text-gray-600">Loading dashboard...</p>
+      </div>
+    </div>
+  }
+
+  @if (!loading) {
+    <!-- KPI Cards Row 1 - Primary Metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6">
+      <!-- Today's Sales -->
+      <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-green-100 text-xs font-medium uppercase tracking-wide">Today's Sales</span>
+          <span class="text-2xl">💰</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">₹{{ stats.todaySalesAmount | number: '1.0-0' }}</p>
+      </div>
+
+      <!-- Total Distributors -->
+      <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-indigo-100 text-xs font-medium uppercase tracking-wide">Distributors</span>
+          <span class="text-2xl">🚚</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">{{ stats.totalDistributors }}</p>
+      </div>
+
+      <!-- Pending POs -->
+      <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-orange-100 text-xs font-medium uppercase tracking-wide">Pending POs</span>
+          <span class="text-2xl">📦</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">{{ stats.pendingPOCount }}</p>
+      </div>
+
+      <!-- Pending PO Amount -->
+      <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-red-100 text-xs font-medium uppercase tracking-wide">PO Amount</span>
+          <span class="text-2xl">⏳</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">₹{{ stats.pendingPOAmount | number: '1.0-0' }}</p>
+      </div>
+
+      <!-- Payment Reminders -->
+      <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-yellow-100 text-xs font-medium uppercase tracking-wide">Reminders</span>
+          <span class="text-2xl">📢</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">{{ stats.pendingPaymentReminders }}</p>
+      </div>
+
+      <!-- Pending Payments -->
+      <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 md:p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-purple-100 text-xs font-medium uppercase tracking-wide">Pending Pay</span>
+          <span class="text-2xl">💳</span>
+        </div>
+        <p class="text-2xl md:text-3xl font-bold">₹{{ stats.pendingPaymentAmount | number: '1.0-0' }}</p>
+        @if (stats.oldestPendingPaymentDays > 0) {
+          <p class="text-xs text-purple-200 mt-1">Oldest: {{ stats.oldestPendingPaymentDays }}d</p>
+        }
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
+      <!-- Pending Purchase Orders - Takes 2 columns -->
+      <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm p-4 md:p-6 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">📋 Pending Purchase Orders</h2>
+          <span class="text-xs text-gray-500 bg-orange-100 px-2 py-1 rounded-full">{{ pendingPurchaseOrders.length }} pending</span>
+        </div>
+
+        @if (pendingPurchaseOrders.length > 0) {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="px-3 py-2 text-left font-semibold">PO No</th>
+                  <th class="px-3 py-2 text-left font-semibold">Distributor</th>
+                  <th class="px-3 py-2 text-right font-semibold">Amount</th>
+                  <th class="px-3 py-2 text-left font-semibold">Date</th>
+                  <th class="px-3 py-2 text-center font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (po of pendingPurchaseOrders | slice: 0 : 5; track po.id) {
+                  <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="px-3 py-3 font-medium text-gray-900">{{ po.poNo }}</td>
+                    <td class="px-3 py-3 text-gray-600">{{ getDistributorName(po.distributor || po.distributorId) }}</td>
+                    <td class="px-3 py-3 text-right font-semibold text-gray-900">₹{{ po.totalAmount | number: '1.0-0' }}</td>
+                    <td class="px-3 py-3 text-gray-500 text-xs">{{ formatDate(po.createdAt) }}</td>
+                    <td class="px-3 py-3 text-center">
+                      <div class="flex justify-center gap-1">
+                        <button
+                          (click)="approvePurchaseOrder(po)"
+                          [disabled]="approvingPOId === po.id"
+                          class="px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 text-xs font-medium"
+                        >
+                          {{ approvingPOId === po.id ? '...' : '✓' }}
+                        </button>
+                        <button
+                          (click)="rejectPurchaseOrder(po)"
+                          [disabled]="rejectingPOId === po.id"
+                          class="px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 text-xs font-medium"
+                        >
+                          {{ rejectingPOId === po.id ? '...' : '✗' }}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="text-center py-8 text-gray-400">
+            <span class="text-4xl">✅</span>
+            <p class="mt-2">No pending purchase orders</p>
+          </div>
+        }
+      </div>
+
+      <!-- Payment Reminders - Takes 1 column -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 md:p-6 border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">💳 Payment Reminders</h2>
+          <span class="text-xs text-gray-500 bg-yellow-100 px-2 py-1 rounded-full">{{ paymentReminders.length }}</span>
+        </div>
+
+        @if (paymentReminders.length > 0) {
+          <div class="space-y-3 max-h-80 overflow-y-auto">
+            @for (reminder of paymentReminders | slice: 0 : 6; track reminder.id) {
+              <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div class="flex justify-between items-start mb-2">
+                  <span class="text-xs text-gray-500">#{{ reminder.id }}</span>
+                  <span class="text-sm font-bold text-indigo-600">₹{{ reminder.amount | number: '1.0-0' }}</span>
+                </div>
+                <p class="text-sm font-medium text-gray-800 truncate">{{ getDistributorName(reminder.distributor || reminder.distributorId) }}</p>
+                <div class="flex gap-2 mt-2">
+                  <span
+                    class="px-2 py-0.5 rounded text-xs font-medium"
+                    [ngClass]="
+                      reminder.paymentType === 'cash'
+                        ? 'bg-green-100 text-green-700'
+                        : reminder.paymentType === 'online'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-orange-100 text-orange-700'
+                    "
+                  >
+                    {{ reminder.paymentType || 'cash' | uppercase }}
+                  </span>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
+                    {{ reminder.status | uppercase }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="text-center py-8 text-gray-400">
+            <span class="text-4xl">✅</span>
+            <p class="mt-2">No payment reminders</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Top Products Section with Tabs -->
+    <div class="bg-white rounded-2xl shadow-sm p-4 md:p-6 border border-gray-100 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <h2 class="text-lg font-bold text-gray-900">📊 Top Selling Products</h2>
+        <div class="flex items-center gap-3">
+          <select
+            [(ngModel)]="selectedDistributorForProducts"
+            (change)="onDistributorFilterChange()"
+            class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option [value]="null">All Distributors</option>
+            @for (dist of distributors; track dist.id) {
+              <option [value]="dist.id">{{ dist.businessName || dist.firstName + ' ' + dist.lastName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl w-fit">
+        <button
+          (click)="activeTab = 'today'"
+          [class]="activeTab === 'today' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          Today
+        </button>
+        <button
+          (click)="activeTab = 'week'"
+          [class]="activeTab === 'week' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          Week
+        </button>
+        <button
+          (click)="activeTab = 'month'"
+          [class]="activeTab === 'month' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          Month
+        </button>
+        <button
+          (click)="activeTab = 'year'"
+          [class]="activeTab === 'year' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          Year
+        </button>
+      </div>
+
+      <!-- Month/Year Selector for Month Tab -->
+      @if (activeTab === 'month') {
+        <div class="flex gap-2 mb-4">
+          <select [(ngModel)]="selectedMonth" (change)="onMonthYearChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            @for (m of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track m) {
+              <option [value]="m">{{ ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1] }}</option>
+            }
+          </select>
+          <select [(ngModel)]="selectedYear" (change)="onMonthYearChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm">
+            @for (y of [2024, 2025, 2026]; track y) {
+              <option [value]="y">{{ y }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <!-- Products with Visual Bars -->
+      <div class="space-y-2">
+        @if (activeTab === 'today') {
+          @if (topProductsToday.length > 0) {
+            @for (product of topProductsToday | slice: 0 : 10; track product.itemName; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold" [ngClass]="i < 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'">
+                  {{ i + 1 }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ product.itemName }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        class="bg-indigo-500 h-full rounded-full transition-all duration-300"
+                        [style.width.%]="topProductsToday[0]?.totalAmount ? (product.totalAmount / topProductsToday[0].totalAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap">{{ product.totalQuantity }} qty</span>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-indigo-600 whitespace-nowrap">₹{{ product.totalAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-8 text-gray-400">No data for today</div>
+          }
+        }
+
+        @if (activeTab === 'week') {
+          @if (topProductsWeek.length > 0) {
+            @for (product of topProductsWeek | slice: 0 : 10; track product.itemName; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold" [ngClass]="i < 3 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'">
+                  {{ i + 1 }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ product.itemName }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        class="bg-blue-500 h-full rounded-full transition-all duration-300"
+                        [style.width.%]="topProductsWeek[0]?.totalAmount ? (product.totalAmount / topProductsWeek[0].totalAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap">{{ product.totalQuantity }} qty</span>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-blue-600 whitespace-nowrap">₹{{ product.totalAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-8 text-gray-400">No data for this week</div>
+          }
+        }
+
+        @if (activeTab === 'month') {
+          @if (topProductsMonth.length > 0) {
+            @for (product of topProductsMonth | slice: 0 : 10; track product.itemName; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold" [ngClass]="i < 3 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'">
+                  {{ i + 1 }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ product.itemName }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        class="bg-purple-500 h-full rounded-full transition-all duration-300"
+                        [style.width.%]="topProductsMonth[0]?.totalAmount ? (product.totalAmount / topProductsMonth[0].totalAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap">{{ product.totalQuantity }} qty</span>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-purple-600 whitespace-nowrap">₹{{ product.totalAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-8 text-gray-400">No data for this month</div>
+          }
+        }
+
+        @if (activeTab === 'year') {
+          @if (topProductsYear.length > 0) {
+            @for (product of topProductsYear | slice: 0 : 10; track product.itemName; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold" [ngClass]="i < 3 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'">
+                  {{ i + 1 }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ product.itemName }}</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        class="bg-green-500 h-full rounded-full transition-all duration-300"
+                        [style.width.%]="topProductsYear[0]?.totalAmount ? (product.totalAmount / topProductsYear[0].totalAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap">{{ product.totalQuantity }} qty</span>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-green-600 whitespace-nowrap">₹{{ product.totalAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="text-center py-8 text-gray-400">No data for this year</div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Crop & Disease Sales Report -->
+    <div class="bg-white rounded-2xl shadow-sm p-4 md:p-6 border border-gray-100 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <h2 class="text-lg font-bold text-gray-900">🌾 Crop & Disease Sales</h2>
+        <div class="flex items-center gap-3 flex-wrap">
+          <input type="date" [(ngModel)]="cropDiseaseFromDate" (change)="onCropDiseaseDateChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+          <input type="date" [(ngModel)]="cropDiseaseToDate" (change)="onCropDiseaseDateChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+          <select [(ngModel)]="selectedDistributorForCropDisease" (change)="onCropDiseaseDistributorChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+            <option [value]="null">All Distributors</option>
+            @for (dist of distributors; track dist.id) {
+              <option [value]="dist.id">{{ dist.businessName || dist.firstName + ' ' + dist.lastName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl w-fit">
+        <button
+          (click)="cropDiseaseActiveTab = 'crop'"
+          [class]="cropDiseaseActiveTab === 'crop' ? 'bg-white shadow-sm text-green-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          🌾 By Crop
+        </button>
+        <button
+          (click)="cropDiseaseActiveTab = 'disease'"
+          [class]="cropDiseaseActiveTab === 'disease' ? 'bg-white shadow-sm text-red-600' : 'text-gray-600 hover:text-gray-900'"
+          class="px-4 py-2 text-sm font-medium rounded-lg transition"
+        >
+          🦠 By Disease
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        @if (cropDiseaseActiveTab === 'crop') {
+          @if (cropWiseSales.length > 0) {
+            @for (item of cropWiseSales | slice: 0 : 8; track item.crop; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                <span class="w-8 h-8 flex items-center justify-center rounded-full bg-green-600 text-white text-sm font-bold">{{ i + 1 }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900">{{ item.crop || 'Not Specified' }}</p>
+                  <p class="text-xs text-gray-500">{{ item.totalInvoices }} invoices • {{ item.totalQuantity }} qty</p>
+                </div>
+                <span class="text-sm font-bold text-green-600">₹{{ item.totalSalesAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="col-span-2 text-center py-6 text-gray-400">No crop data found</div>
+          }
+        }
+
+        @if (cropDiseaseActiveTab === 'disease') {
+          @if (diseaseWiseSales.length > 0) {
+            @for (item of diseaseWiseSales | slice: 0 : 8; track item.disease; let i = $index) {
+              <div class="flex items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                <span class="w-8 h-8 flex items-center justify-center rounded-full bg-red-600 text-white text-sm font-bold">{{ i + 1 }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900">{{ item.disease || 'Not Specified' }}</p>
+                  <p class="text-xs text-gray-500">{{ item.targetPest || '-' }} • {{ item.totalQuantity }} qty</p>
+                </div>
+                <span class="text-sm font-bold text-red-600">₹{{ item.totalSalesAmount | number: '1.0-0' }}</span>
+              </div>
+            }
+          } @else {
+            <div class="col-span-2 text-center py-6 text-gray-400">No disease data found</div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Distributor Performance -->
+    <div class="bg-white rounded-2xl shadow-sm p-4 md:p-6 border border-gray-100 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <h2 class="text-lg font-bold text-gray-900">🏆 Distributor Performance</h2>
+        <div class="flex items-center gap-3">
+          <input type="date" [(ngModel)]="reportFromDate" (change)="onDateRangeChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+          <input type="date" [(ngModel)]="reportToDate" (change)="onDateRangeChange()" class="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top Distributors -->
+        <div>
+          <h3 class="text-sm font-bold text-green-700 mb-3 flex items-center gap-2">
+            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-green-100">🥇</span>
+            Top Performers
+          </h3>
+          @if (topDistributors.length > 0) {
+            <div class="space-y-2">
+              @for (dist of topDistributors | slice: 0 : 5; track dist.businessName; let i = $index) {
+                <div class="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                  <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold" [ngClass]="i < 3 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'">
+                    {{ i + 1 }}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ dist.businessName || dist.distributorName }}</p>
+                    <div class="flex-1 bg-green-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div
+                        class="bg-green-500 h-full rounded-full"
+                        [style.width.%]="topDistributors[0]?.totalSalesAmount ? (dist.totalSalesAmount / topDistributors[0].totalSalesAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-green-600">₹{{ dist.totalSalesAmount | number: '1.0-0' }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center py-6 text-gray-400">No data found</div>
+          }
+        </div>
+
+        <!-- Least Performing Distributors -->
+        <div>
+          <h3 class="text-sm font-bold text-red-700 mb-3 flex items-center gap-2">
+            <span class="w-6 h-6 flex items-center justify-center rounded-full bg-red-100">📉</span>
+            Needs Attention
+          </h3>
+          @if (leastDistributors.length > 0) {
+            <div class="space-y-2">
+              @for (dist of leastDistributors | slice: 0 : 5; track dist.businessName; let i = $index) {
+                <div class="flex items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                  <span class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-xs font-bold">
+                    {{ i + 1 }}
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ dist.businessName || dist.distributorName }}</p>
+                    <div class="flex-1 bg-red-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div
+                        class="bg-red-400 h-full rounded-full"
+                        [style.width.%]="topDistributors[0]?.totalSalesAmount ? (dist.totalSalesAmount / topDistributors[0].totalSalesAmount) * 100 : 0"
+                      ></div>
+                    </div>
+                  </div>
+                  <span class="text-sm font-bold text-red-600">₹{{ dist.totalSalesAmount | number: '1.0-0' }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center py-6 text-gray-400">No data found</div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

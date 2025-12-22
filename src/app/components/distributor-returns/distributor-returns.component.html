@@ -1,0 +1,245 @@
+<div class="distributor-returns min-h-screen bg-indigo-50 p-4 md:p-6 md:p-8">
+  <div class="container">
+    <h1>Generate Returns</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'purchase'"
+        (click)="activeTab = 'purchase'"
+      >
+        Purchase Return
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'sales'"
+        (click)="activeTab = 'sales'"
+      >
+        Sales Return
+      </button>
+    </div>
+
+    <!-- Purchase Return Form -->
+    <div *ngIf="activeTab === 'purchase'" class="form-section">
+      <h2>Create Purchase Return</h2>
+      <form class="return-form">
+        <div class="form-group">
+          <label>Return Number</label>
+          <input
+            type="text"
+            [(ngModel)]="purchaseReturnForm.returnNo"
+            name="returnNo"
+            placeholder="E.g., PR-001"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Return Date</label>
+          <input
+            type="date"
+            [(ngModel)]="purchaseReturnForm.returnDate"
+            name="returnDate"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Item</label>
+          <select [(ngModel)]="purchaseReturnForm.itemId" name="itemId" class="form-control">
+            <option value="">Select Item</option>
+            <option *ngFor="let item of items" [value]="item.id">
+              {{ item.name }} - {{ item.code }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input
+              type="number"
+              [(ngModel)]="purchaseReturnForm.quantity"
+              name="quantity"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label>Rate</label>
+            <input
+              type="number"
+              [(ngModel)]="purchaseReturnForm.rate"
+              name="rate"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label>Total Amount</label>
+            <input
+              type="text"
+              [value]="calculateTotal(purchaseReturnForm.quantity, purchaseReturnForm.rate) | currency"
+              disabled
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea
+            [(ngModel)]="purchaseReturnForm.reason"
+            name="reason"
+            placeholder="Enter reason for return..."
+            class="form-control"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary" (click)="submitPurchaseReturn()">
+          Submit Purchase Return
+        </button>
+      </form>
+
+      <div class="returns-history" *ngIf="purchaseReturns.length > 0">
+        <h3>Purchase Return History</h3>
+        <table class="returns-table">
+          <thead>
+            <tr>
+              <th>Return No</th>
+              <th>Date</th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let pr of purchaseReturns">
+              <td>{{ pr.returnNo }}</td>
+              <td>{{ pr.returnDate | date }}</td>
+              <td>{{ pr.item?.name }}</td>
+              <td>{{ pr.quantity }}</td>
+              <td>{{ pr.totalAmount | currency }}</td>
+              <td>
+                <span [class]="'status-' + pr.status">{{ pr.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sales Return Form -->
+    <div *ngIf="activeTab === 'sales'" class="form-section">
+      <h2>Create Sales Return</h2>
+      <form class="return-form">
+        <div class="form-group">
+          <label>Return Number</label>
+          <input
+            type="text"
+            [(ngModel)]="salesReturnForm.returnNo"
+            name="returnNo"
+            placeholder="E.g., SR-001"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Return Date</label>
+          <input
+            type="date"
+            [(ngModel)]="salesReturnForm.returnDate"
+            name="returnDate"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Item</label>
+          <select [(ngModel)]="salesReturnForm.itemId" name="itemId" class="form-control">
+            <option value="">Select Item</option>
+            <option *ngFor="let item of items" [value]="item.id">
+              {{ item.name }} - {{ item.code }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input
+              type="number"
+              [(ngModel)]="salesReturnForm.quantity"
+              name="quantity"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label>Rate</label>
+            <input
+              type="number"
+              [(ngModel)]="salesReturnForm.rate"
+              name="rate"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+          <div class="form-group">
+            <label>Total Amount</label>
+            <input
+              type="text"
+              [value]="calculateTotal(salesReturnForm.quantity, salesReturnForm.rate) | currency"
+              disabled
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea
+            [(ngModel)]="salesReturnForm.reason"
+            name="reason"
+            placeholder="Enter reason for return..."
+            class="form-control"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary" (click)="submitSalesReturn()">
+          Submit Sales Return
+        </button>
+      </form>
+
+      <div class="returns-history" *ngIf="salesReturns.length > 0">
+        <h3>Sales Return History</h3>
+        <table class="returns-table">
+          <thead>
+            <tr>
+              <th>Return No</th>
+              <th>Date</th>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sr of salesReturns">
+              <td>{{ sr.returnNo }}</td>
+              <td>{{ sr.returnDate | date }}</td>
+              <td>{{ sr.item?.name }}</td>
+              <td>{{ sr.quantity }}</td>
+              <td>{{ sr.totalAmount | currency }}</td>
+              <td>
+                <span [class]="'status-' + sr.status">{{ sr.status }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

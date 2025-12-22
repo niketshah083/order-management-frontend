@@ -1,0 +1,253 @@
+<div class="quick-invoice-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>⚡ Quick Invoice</h1>
+      <p class="subtitle">Fast billing - Select items, add quantities, create invoice</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-secondary" (click)="goToBillingHistory()">📋 View History</button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage()" class="alert alert-error">❌ {{ errorMessage() }}</div>
+  <div *ngIf="successMessage()" class="alert alert-success">✅ {{ successMessage() }}</div>
+
+  <div class="main-content">
+    <!-- Left Panel: Items Grid -->
+    <div class="items-panel">
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <input type="text" placeholder="🔍 Search items by name, batch or serial..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" class="search-input" />
+        <span class="item-count">{{ filteredItems().length }} items</span>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading()" class="loading">
+        <div class="spinner"></div>
+        <span>Loading inventory...</span>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="items-grid" *ngIf="!isLoading()">
+        <div *ngFor="let item of filteredItems()" class="item-card" [class.selected]="item.quantity > 0">
+          <!-- Item Image -->
+          <div class="item-image">
+            <img *ngIf="getImageUrl(item)" [src]="getImageUrl(item)" [alt]="item.itemName" (error)="item.imageUrl = ''" />
+            <div *ngIf="!getImageUrl(item)" class="no-image">📦</div>
+          </div>
+
+          <div class="item-content">
+            <div class="item-header">
+              <span class="item-name">{{ item.itemName }}</span>
+              <span class="item-stock" [class.low-stock]="item.stockQuantity <= 5"> Stock: {{ item.stockQuantity }} {{ item.unit }} </span>
+            </div>
+
+            <div class="item-details">
+              <span class="item-rate">₹{{ item.rate | number: '1.2-2' }}/{{ item.unit }}</span>
+
+              <!-- Batch/Serial Info -->
+              <ng-container *ngIf="item.hasBatchTracking || item.hasSerialTracking">
+                <button *ngIf="item.batches.length > 1 && !item.selectedBatch" class="batch-select-btn" (click)="openBatchSelector(item)">
+                  🏷️ Select {{ item.hasSerialTracking ? 'Serial' : 'Batch' }} ({{ item.batches.length }})
+                </button>
+                <span *ngIf="item.selectedBatch" class="selected-batch" (click)="openBatchSelector(item)">
+                  <span *ngIf="item.batchNumber" class="batch-tag">B: {{ item.batchNumber }}</span>
+                  <span *ngIf="item.serialNumber" class="serial-tag">S: {{ item.serialNumber }}</span>
+                  <span class="change-btn">✏️</span>
+                </span>
+                <span *ngIf="item.batches.length === 1 && !item.selectedBatch && item.batches[0].batchNumber" class="item-batch"> B: {{ item.batches[0].batchNumber }} </span>
+              </ng-container>
+
+              <span
+                *ngIf="item.expiryDate || (item.batches.length === 1 && item.batches[0].expiryDate)"
+                class="item-expiry"
+                [ngClass]="getExpiryClass(item.expiryDate || item.batches[0].expiryDate)"
+              >
+                Exp: {{ formatExpiry(item.expiryDate || item.batches[0].expiryDate) }}
+              </span>
+            </div>
+
+            <div class="quantity-controls">
+              <button class="qty-btn minus" (click)="decrementQty(item)" [disabled]="item.quantity === 0">−</button>
+              <input type="number" [ngModel]="item.quantity" (ngModelChange)="onQuantityChange(item, $event)" [max]="item.stockQuantity" min="0" class="qty-input" />
+              <button class="qty-btn plus" (click)="incrementQty(item)" [disabled]="item.quantity >= item.stockQuantity">+</button>
+            </div>
+
+            <div class="quick-add-btns">
+              <button class="quick-btn" (click)="quickAdd(item, 1)" [disabled]="item.quantity >= item.stockQuantity">+1</button>
+              <button class="quick-btn" (click)="quickAdd(item, 5)" [disabled]="item.quantity + 5 > item.stockQuantity">+5</button>
+              <button class="quick-btn" (click)="quickAdd(item, 10)" [disabled]="item.quantity + 10 > item.stockQuantity">+10</button>
+              <button class="quick-btn clear" (click)="clearItem(item)" *ngIf="item.quantity > 0">✕</button>
+            </div>
+
+            <!-- Item Discount -->
+            <div class="item-discount" *ngIf="item.quantity > 0">
+              <div class="discount-input-group">
+                <input type="number" [ngModel]="item.discount" (ngModelChange)="onItemDiscountChange(item, $event)" placeholder="Discount" min="0" class="discount-input" />
+                <button class="discount-type-btn" (click)="toggleItemDiscountType(item)" [title]="item.discountType === 'percentage' ? 'Percentage' : 'Amount'">
+                  {{ item.discountType === 'percentage' ? '%' : '₹' }}
+                </button>
+              </div>
+              <span class="discount-amount" *ngIf="item.discount > 0">-₹{{ getItemDiscountAmount(item) | number: '1.2-2' }}</span>
+            </div>
+
+            <div class="item-total" *ngIf="item.quantity > 0">
+              <span>Total: ₹{{ getItemTotal(item) | number: '1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="filteredItems().length === 0" class="no-items">
+          <p>No items found in inventory</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Invoice Summary -->
+    <div class="summary-panel">
+      <h2>📝 Invoice Summary</h2>
+
+      <!-- Customer Selection -->
+      <div class="customer-section">
+        <label>Customer *</label>
+        <div class="customer-selector" *ngIf="!selectedCustomer()">
+          <input
+            type="text"
+            placeholder="Search customer by name or mobile..."
+            [ngModel]="customerSearchQuery()"
+            (ngModelChange)="customerSearchQuery.set($event)"
+            (focus)="showCustomerDropdown.set(true)"
+            class="customer-input"
+          />
+          <div class="customer-dropdown" *ngIf="showCustomerDropdown() && filteredCustomers().length > 0">
+            <div *ngFor="let customer of filteredCustomers()" class="customer-option" (click)="selectCustomer(customer)">
+              <span class="customer-name">{{ customer.firstname }} {{ customer.lastname }}</span>
+              <span class="customer-mobile">{{ customer.mobileNo }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="selected-customer" *ngIf="selectedCustomer()">
+          <div class="customer-info">
+            <span class="name">{{ selectedCustomer()?.firstname }} {{ selectedCustomer()?.lastname }}</span>
+            <span class="mobile">📱 {{ selectedCustomer()?.mobileNo }}</span>
+          </div>
+          <button class="btn-clear" (click)="clearCustomer()">✕</button>
+        </div>
+      </div>
+
+      <!-- Payment Type -->
+      <div class="payment-section">
+        <label>Payment Type</label>
+        <div class="payment-options">
+          <button class="payment-btn" [class.active]="paymentType() === 'cash'" (click)="setPaymentType('cash')">💵 Cash</button>
+          <button class="payment-btn" [class.active]="paymentType() === 'credit'" (click)="setPaymentType('credit')">📝 Credit</button>
+        </div>
+      </div>
+
+      <!-- Selected Items List -->
+      <div class="selected-items">
+        <h3>Selected Items ({{ totalItems() }})</h3>
+        <div class="items-list" *ngIf="selectedItems().length > 0">
+          <div *ngFor="let item of selectedItems()" class="selected-item">
+            <div class="item-info">
+              <span class="name">{{ item.itemName }}</span>
+              <span class="qty">{{ item.quantity }} × ₹{{ item.rate }}</span>
+              <span *ngIf="item.discount > 0" class="item-disc"> -{{ item.discount }}{{ item.discountType === 'percentage' ? '%' : '₹' }} </span>
+              <span *ngIf="item.batchNumber" class="batch-info">B: {{ item.batchNumber }}</span>
+              <span *ngIf="item.serialNumber" class="serial-info">S: {{ item.serialNumber }}</span>
+            </div>
+            <span class="amount">₹{{ getItemTotal(item) | number: '1.2-2' }}</span>
+          </div>
+        </div>
+        <div *ngIf="selectedItems().length === 0" class="no-selection">
+          <p>No items selected</p>
+          <small>Add quantities to items on the left</small>
+        </div>
+      </div>
+
+      <!-- Overall Discount -->
+      <div class="overall-discount-section">
+        <label>Overall Invoice Discount</label>
+        <div class="overall-discount-input">
+          <input type="number" [ngModel]="overallDiscount()" (ngModelChange)="onOverallDiscountChange($event)" placeholder="0" min="0" class="discount-input" />
+          <button class="discount-type-btn" (click)="toggleOverallDiscountType()" [title]="overallDiscountType() === 'percentage' ? 'Percentage' : 'Amount'">
+            {{ overallDiscountType() === 'percentage' ? '%' : '₹' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div class="totals-section">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>₹{{ subtotal() | number: '1.2-2' }}</span>
+        </div>
+        <div class="total-row discount-row" *ngIf="totalItemDiscount() > 0">
+          <span>Item Discounts</span>
+          <span class="discount-value">-₹{{ totalItemDiscount() | number: '1.2-2' }}</span>
+        </div>
+        <div class="total-row discount-row" *ngIf="overallDiscountAmount() > 0">
+          <span>Overall Discount</span>
+          <span class="discount-value">-₹{{ overallDiscountAmount() | number: '1.2-2' }}</span>
+        </div>
+        <div class="total-row" *ngIf="overallDiscountAmount() > 0">
+          <span>After Discount</span>
+          <span>₹{{ subtotalAfterDiscount() | number: '1.2-2' }}</span>
+        </div>
+        <div class="total-row">
+          <span>GST</span>
+          <span>₹{{ totalGstAfterDiscount() | number: '1.2-2' }}</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>Grand Total</span>
+          <span>₹{{ grandTotal() | number: '1.0-0' }}</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn-clear-all" (click)="clearAll()" [disabled]="selectedItems().length === 0">🗑️ Clear All</button>
+        <div class="invoice-actions">
+          <button class="btn-draft" (click)="saveDraft()" [disabled]="!canCreateInvoice() || isLoading()">
+            <span *ngIf="!isLoading()">📝 Save Draft</span>
+            <span *ngIf="isLoading()">Saving...</span>
+          </button>
+          <button class="btn-complete" (click)="completeInvoice()" [disabled]="!canCreateInvoice() || isLoading()">
+            <span *ngIf="!isLoading()">✅ Complete</span>
+            <span *ngIf="isLoading()">Creating...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch/Serial Selection Modal -->
+  <div class="modal-overlay" *ngIf="showBatchModal()" (click)="closeBatchModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Select {{ selectedItemForBatch()?.hasSerialTracking ? 'Serial Number' : 'Batch' }}</h3>
+        <button class="modal-close" (click)="closeBatchModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-item-name">{{ selectedItemForBatch()?.itemName }}</p>
+        <div class="batch-list">
+          <div
+            *ngFor="let batch of selectedItemForBatch()?.batches"
+            class="batch-option"
+            [class.selected]="selectedItemForBatch()?.selectedBatchId === batch.id"
+            (click)="selectBatch(selectedItemForBatch()!, batch)"
+          >
+            <div class="batch-info">
+              <span *ngIf="batch.batchNumber" class="batch-number">🏷️ Batch: {{ batch.batchNumber }}</span>
+              <span *ngIf="batch.serialNumber" class="serial-number">🔢 Serial: {{ batch.serialNumber }}</span>
+              <span class="batch-qty">Qty: {{ batch.quantity }}</span>
+            </div>
+            <div class="batch-expiry" *ngIf="batch.expiryDate" [ngClass]="getExpiryClass(batch.expiryDate)">Exp: {{ formatExpiry(batch.expiryDate) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

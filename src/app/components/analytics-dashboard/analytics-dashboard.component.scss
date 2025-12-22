@@ -1,0 +1,133 @@
+:host {
+  display: block;
+}
+
+// Chart containers
+canvas {
+  max-width: 100%;
+  height: 100% !important;
+}
+
+// Treemap styles
+.treemap-container {
+  svg {
+    width: 100%;
+    height: 100%;
+    
+    rect {
+      transition: opacity 0.2s ease;
+    }
+    
+    text {
+      pointer-events: none;
+      user-select: none;
+    }
+  }
+}
+
+// KPI card hover effects
+.kpi-card {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Date input styling
+input[type="date"] {
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Table row hover
+tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+// Loading animation
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px !important;
+  }
+  
+  .kpi-value {
+    font-size: 1.25rem;
+  }
+}
+
+// Custom scrollbar for tables
+.overflow-x-auto {
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+// Chart tooltip customization
+.chartjs-tooltip {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+}
+
+// India Map styles
+.map-tooltip {
+  pointer-events: none;
+  font-family: inherit;
+  
+  strong {
+    display: block;
+    margin-bottom: 2px;
+    color: #1e293b;
+  }
+}
+
+// Map container
+.india-map-container {
+  position: relative;
+  
+  svg {
+    path {
+      transition: all 0.2s ease;
+      
+      &:hover {
+        filter: brightness(1.1);
+      }
+    }
+  }
+}

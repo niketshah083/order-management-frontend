@@ -1,0 +1,598 @@
+@if (auth.isAuthenticated()) {
+<div class="flex h-screen bg-gray-50 overflow-hidden font-sans text-gray-900 relative">
+  <!-- Mobile Sidebar Backdrop (Desktop only hidden) -->
+  @if (innerWidth < 768) {
+  <div
+    class="fixed inset-0 bg-gray-900/50 z-40 backdrop-blur-sm transition-opacity duration-300"
+    [class.opacity-100]="sidebarOpen()"
+    [class.opacity-0]="!sidebarOpen()"
+    [class.pointer-events-none]="!sidebarOpen()"
+    (click)="closeSidebarIfMobile()"
+    [style.display]="sidebarOpen() ? 'block' : 'none'"
+  ></div>
+  }
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 shadow-2xl transform transition-transform duration-300 ease-in-out md:static md:transform-none md:transition-all md:duration-300 flex flex-col overflow-hidden"
+    [class.translate-x-0]="sidebarOpen() || innerWidth >= 768"
+    [class.-translate-x-full]="!sidebarOpen() && innerWidth < 768"
+    [style.width]="innerWidth >= 768 ? (sidebarOpen() ? '288px' : '0px') : undefined"
+    [style.minWidth]="innerWidth >= 768 ? (sidebarOpen() ? '288px' : '0px') : undefined"
+    [style.maxWidth]="innerWidth >= 768 ? (sidebarOpen() ? '288px' : '0px') : undefined"
+    [attr.data-state]="sidebarOpen() ? 'open' : 'closed'"
+  >
+    <!-- Logo -->
+    <div class="h-16 md:h-16 flex items-center justify-between px-6 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <img src="/logo.png" alt="Re-Invent Invoicing" class="w-9 h-9 object-contain" />
+        <span class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-amber-600 tracking-tight hidden md:inline">Re-Invent</span>
+      </div>
+      <!-- Mobile Close Button -->
+      <button (click)="closeSidebarIfMobile()" class="md:hidden text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+      <p class="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Main Menu</p>
+
+      <!-- DASHBOARD - Admin -->
+      @if (auth.isAdmin()) {
+      <a
+        routerLink="/dashboard"
+        (click)="closeSidebarIfMobile()"
+        routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+        class="flex items-center px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all mb-1"
+      >
+        <svg class="w-5 h-5 text-indigo-600" [class.text-indigo-600]="isActive('/dashboard')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4l4 2m-9-2l4-2"></path>
+        </svg>
+        <span class="ml-3 font-semibold text-gray-700">Dashboard</span>
+      </a>
+      }
+
+      <!-- DASHBOARD - Distributors -->
+      @if (auth.isDistributor()) {
+      <a
+        routerLink="/distributor-dashboard"
+        (click)="closeSidebarIfMobile()"
+        routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+        class="flex items-center px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all mb-1"
+      >
+        <svg class="w-5 h-5 text-indigo-600" [class.text-indigo-600]="isActive('/distributor-dashboard')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 4l4 2m-9-2l4-2"></path>
+        </svg>
+        <span class="ml-3 font-semibold text-gray-700">Dashboard</span>
+      </a>
+      }
+
+      <!-- 1. SALES (INVOICES) - Managers, Admins & Distributors -->
+      @if (auth.isManager() || auth.isAdmin() || auth.isDistributor()) {
+      <button (click)="toggleSalesMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+          <span class="ml-3 font-semibold text-gray-700">Sales (Invoices)</span>
+        </div>
+        <svg class="w-4 h-4 transition-transform" [class.rotate-180]="salesMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+
+      <!-- Sales Submenu -->
+      @if (salesMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        <a
+          routerLink="/quick-invoice"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-green-100 text-green-700 font-semibold shadow-sm ring-1 ring-green-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-green-50 rounded-lg transition-all"
+        >
+          <span class="w-4 h-4 text-center">⚡</span>
+          <span class="ml-2 font-medium">Quick Invoice</span>
+        </a>
+
+        <a
+          routerLink="/billing"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/billing')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="ml-2">Full Invoice</span>
+        </a>
+
+        <a
+          routerLink="/billing-history"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/billing-history')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="ml-2">View Invoices</span>
+        </a>
+
+        @if (!auth.isAdmin()) {
+        <a
+          routerLink="/returns/sales/create"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/returns/sales/create')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="ml-2">Create Sales Return</span>
+        </a>
+        }
+
+        <a
+          routerLink="/returns/sales-list"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/returns/sales-list')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"></path>
+          </svg>
+          <span class="ml-2">View Sales Return</span>
+        </a>
+      </div>
+      } }
+
+      <!-- 2. PAYMENT REQUESTS - Distributors, Managers & Admins -->
+      @if (false) {
+      <button (click)="togglePaymentMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <span class="ml-3 font-semibold text-gray-700">Payment Requests</span>
+        </div>
+        <svg class="w-4 h-4 transition-transform" [class.rotate-180]="paymentMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+
+      <!-- Payment Requests Submenu -->
+      @if (paymentMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        <!-- For Distributors: My Pending Requests -->
+        @if (auth.isDistributor()) {
+        <a
+          routerLink="/payment-requests"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/payment-requests')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="ml-2">My Pending Requests</span>
+        </a>
+        }
+
+        <!-- For Admins/Managers: All Payment Requests -->
+        @if (auth.isAdmin() || auth.isManager()) {
+        <a
+          routerLink="/payment-management"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/payment-management')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+          <span class="ml-2">All Payment Requests</span>
+        </a>
+        }
+      </div>
+      } }
+
+      <!-- 3. PURCHASE - Managers & Distributors & Admins -->
+      @if (auth.isDistributor() || auth.isManager() || auth.isAdmin()) {
+      <button (click)="togglePurchaseMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            ></path>
+          </svg>
+          <span class="ml-3 font-semibold text-gray-700">Purchase</span>
+        </div>
+        <svg class="w-4 h-4 transition-transform" [class.rotate-180]="purchaseMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+
+      <!-- Purchase Submenu -->
+      @if (purchaseMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        @if (auth.isDistributor()) {
+        <a
+          routerLink="/purchase-orders/create"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/purchase-orders/create')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="ml-2">Create Purchase Order</span>
+        </a>
+        }
+
+        <a
+          routerLink="/purchase-orders"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/purchase-orders')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            ></path>
+          </svg>
+          <span class="ml-2">View Purchase Order</span>
+        </a>
+
+        @if (auth.isDistributor()) {
+        <a
+          routerLink="/returns/purchase/create"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/returns/purchase/create')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="ml-2">Create PO Return</span>
+        </a>
+        }
+
+        <a
+          routerLink="/returns/purchase-list"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/returns/purchase-list')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            ></path>
+          </svg>
+          <span class="ml-2">View PO Returns</span>
+        </a>
+
+        @if (auth.isDistributor()) {
+        <a
+          routerLink="/ledger"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/ledger')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+          <span class="ml-2">Ledger</span>
+        </a>
+
+        <a
+          routerLink="/inventory"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/inventory')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            ></path>
+          </svg>
+          <span class="ml-2">Stock Inventory</span>
+        </a>
+
+        <a
+          routerLink="/inventory-v2"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+        >
+          <svg class="w-4 h-4" [class.text-indigo-600]="isActive('/inventory-v2')" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+          <span class="ml-2">📊 Enterprise Inventory</span>
+        </a>
+        }
+      </div>
+      } }
+
+      <!-- PRODUCT TRACE - Admins & Distributors -->
+
+      <!-- PRODUCT TRACE -->
+      @if (auth.isAdmin() || auth.isDistributor()) {
+      <a
+        routerLink="/product-trace"
+        (click)="closeSidebarIfMobile()"
+        routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+        class="flex items-center px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all mb-1"
+        ><span class="ml-3 font-semibold text-gray-700">📦 Product Trace</span></a
+      >
+      } @if (auth.isDistributor()) {
+      <button (click)="toggleGrnMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <span class="ml-3 font-semibold text-gray-700">GRN</span
+        ><svg class="w-4 h-4 transition-transform" [class.rotate-180]="grnMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+      @if (grnMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        <a
+          routerLink="/in-ward"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">In Ward</span></a
+        >
+      </div>
+      } } @if (auth.isAdmin()) {
+      <a
+        routerLink="/admin/payment-entries"
+        (click)="closeSidebarIfMobile()"
+        routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+        class="flex items-center px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all mb-1"
+        ><span class="ml-3 font-semibold text-gray-700">💳 Payments</span></a
+      >
+      } @if (auth.isAdmin()) {
+      <button (click)="toggleMastersMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <span class="ml-3 font-semibold text-gray-700">Masters</span
+        ><svg class="w-4 h-4 transition-transform" [class.rotate-180]="mastersMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+      @if (mastersMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        <a
+          routerLink="/customers"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">Customers</span></a
+        ><a
+          routerLink="/distributors"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">Distributors</span></a
+        ><a
+          routerLink="/categories"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">Categories</span></a
+        ><a
+          routerLink="/items"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">Items</span></a
+        ><a
+          routerLink="/users"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">Users</span></a
+        >
+      </div>
+      } } @if (auth.isManager() || auth.isAdmin()) {
+      <button (click)="toggleReportsMenu()" class="w-full flex items-center justify-between px-3 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-all group mb-1">
+        <span class="ml-3 font-semibold text-gray-700">Reports</span
+        ><svg class="w-4 h-4 transition-transform" [class.rotate-180]="reportsMenuOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </button>
+      @if (reportsMenuOpen()) {
+      <div class="ml-8 space-y-1 mb-4">
+        <a
+          routerLink="/analytics"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 rounded-lg transition-all"
+          ><span class="ml-2">📈 Analytics Dashboard</span></a
+        >
+        <a
+          routerLink="/reports"
+          (click)="closeSidebarIfMobile()"
+          routerLinkActive="bg-indigo-50 text-indigo-700 font-semibold shadow-sm ring-1 ring-indigo-200"
+          class="flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+          ><span class="ml-2">📊 Detailed Reports</span></a
+        >
+      </div>
+      } }
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0 bg-gray-50 h-full overflow-hidden">
+    <!-- Top Header - Fully Responsive for Mobile, Tablet & Web -->
+    <header class="h-14 md:h-16 bg-white border-b border-gray-100 flex items-center justify-between px-2 sm:px-4 md:px-8 shadow-sm z-30 flex-shrink-0 gap-2 md:gap-4">
+      <!-- Left Section: Sidebar Toggle + Logo (Always Visible) -->
+      <div class="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0 min-w-0">
+        <!-- Sidebar Toggle Button -->
+        <button (click)="toggleSidebar()" class="p-1.5 md:p-2 text-gray-600 hover:bg-gray-100 rounded-lg active:scale-95 transition-transform flex-shrink-0" title="Toggle sidebar">
+          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+          </svg>
+        </button>
+
+        <!-- Logo and Title -->
+        <div class="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0 min-w-0">
+          <img src="/logo.png" alt="Re-Invent Invoicing" class="w-5 h-5 md:w-6 md:h-6 object-contain flex-shrink-0" />
+          <h2 class="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-900 tracking-tight whitespace-nowrap truncate">
+            <span class="hidden sm:inline">Re-Invent</span>
+            <span class="sm:hidden">RII</span>
+          </h2>
+        </div>
+      </div>
+
+      <!-- Middle Section: Global Search Bar (Hidden on Mobile) -->
+      <div class="hidden sm:flex flex-1 max-w-xs md:max-w-md lg:max-w-lg min-w-0">
+        <app-global-search></app-global-search>
+      </div>
+
+      <!-- Right Section: Quick Links and User -->
+      <div class="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+        <!-- Quick Links - Desktop Full Text (lg and up) -->
+        <div class="hidden lg:flex items-center gap-1 md:gap-2 flex-shrink-0">
+          @if (auth.isDistributor()) {
+          <a
+            routerLink="/inventory"
+            class="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all whitespace-nowrap"
+            title="View Stock"
+            >📦 Products</a
+          >
+          <a
+            routerLink="/purchase-orders/create"
+            class="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all whitespace-nowrap"
+            title="New PO"
+            >➕ New PO</a
+          >
+          }
+          <a
+            routerLink="/customers"
+            class="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all whitespace-nowrap"
+            title="Customers"
+            >👥 Customers</a
+          >
+          <a
+            routerLink="/billing"
+            class="px-2 md:px-3 py-1 md:py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 border border-green-200 rounded-lg transition-all font-semibold whitespace-nowrap"
+            title="Create Bill"
+            >✨ Create Bill</a
+          >
+        </div>
+
+        <!-- Quick Links - Tablet Icons + Text (md to lg) -->
+        <div class="hidden md:flex lg:hidden items-center gap-1 flex-shrink-0">
+          @if (auth.isDistributor()) {
+          <a routerLink="/inventory" class="px-2 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all" title="Products"
+            >📦</a
+          >
+          <a
+            routerLink="/purchase-orders/create"
+            class="px-2 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all"
+            title="New PO"
+            >➕</a
+          >
+          }
+          <a routerLink="/customers" class="px-2 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-all" title="Customers"
+            >👥</a
+          >
+          <a
+            routerLink="/billing"
+            class="px-2 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 border border-green-200 rounded-lg transition-all font-semibold"
+            title="Create Bill"
+            >✨</a
+          >
+        </div>
+
+        <!-- Quick Links - Mobile Icons Only (Hidden md up) -->
+        <div class="flex md:hidden items-center gap-0.5 flex-shrink-0">
+          @if (auth.isDistributor()) {
+          <a routerLink="/inventory" class="p-1.5 text-base hover:bg-gray-50 rounded-lg transition-all" title="Products">📦</a>
+          <a routerLink="/purchase-orders/create" class="p-1.5 text-base hover:bg-gray-50 rounded-lg transition-all" title="New PO">➕</a>
+          }
+          <a routerLink="/customers" class="p-1.5 text-base hover:bg-gray-50 rounded-lg transition-all" title="Customers">👥</a>
+          <a routerLink="/billing" class="p-1.5 text-base hover:bg-gray-50 rounded-lg transition-all" title="Create Bill">✨</a>
+        </div>
+
+        <!-- Divider -->
+        <div class="hidden sm:block w-px h-6 bg-gray-200 flex-shrink-0"></div>
+
+        <!-- User Section -->
+        <div class="flex items-center gap-1 md:gap-2 flex-shrink-0">
+          <!-- User Info - Hidden on Mobile (md and up) -->
+          <div class="text-right hidden md:block flex-shrink-0">
+            <div class="text-xs md:text-xs lg:text-sm font-semibold text-gray-900 truncate max-w-[120px]">{{ auth.currentUser()?.name }}</div>
+            <div class="text-xs text-gray-500 hidden lg:block">
+              {{ auth.currentUser()?.role === 'SUPER_ADMIN' ? 'Super Admin' : auth.currentUser()?.role === 'DISTRIBUTOR' ? 'Distributor' : 'Manager' }}
+            </div>
+          </div>
+
+          <!-- Avatar -->
+          <img
+            [src]="auth.currentUser()?.avatar"
+            class="h-8 w-8 md:h-9 md:w-9 lg:h-10 lg:w-10 rounded-full border-2 border-indigo-200 shadow-md object-cover flex-shrink-0"
+            [title]="auth.currentUser()?.name"
+          />
+
+          <!-- Logout Button -->
+          <button (click)="logout()" class="p-1.5 md:p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Logout">
+            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Area -->
+    <main class="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth p-0 md:p-0">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+} @else {
+<router-outlet></router-outlet>
+}

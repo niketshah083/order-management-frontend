@@ -1,0 +1,167 @@
+// Reports Component SCSS - Mobile Responsive
+
+// Smooth scrolling for tab navigation
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+// Loading animation
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+// Responsive table improvements
+table {
+  width: 100%;
+  text-align: left;
+
+  thead {
+    background-color: #f9fafb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  th {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    color: #4b5563;
+    font-size: 0.875rem;
+  }
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f9fafb;
+    }
+  }
+}
+
+// Summary Card Styles
+.bg-gradient-to-br {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+// Indigo cards
+.from-indigo-50.to-indigo-100 {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  
+  &.border-indigo-600 {
+    border-left-color: #4f46e5;
+  }
+  
+  &.text-indigo-600 {
+    color: #4f46e5;
+  }
+}
+
+// Green cards
+.from-green-50.to-green-100 {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  
+  &.border-green-600 {
+    border-left-color: #16a34a;
+  }
+  
+  &.text-green-600 {
+    color: #16a34a;
+  }
+}
+
+// Blue cards
+.from-blue-50.to-blue-100 {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  
+  &.border-blue-600 {
+    border-left-color: #2563eb;
+  }
+  
+  &.text-blue-600 {
+    color: #2563eb;
+  }
+}
+
+// Red cards
+.from-red-50.to-red-100 {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  
+  &.border-red-600 {
+    border-left-color: #dc2626;
+  }
+  
+  &.text-red-600 {
+    color: #dc2626;
+  }
+}
+
+// Mobile optimizations
+@media (max-width: 768px) {
+  // Reduce padding on mobile
+  .p-4 {
+    padding: 1rem;
+  }
+
+  .p-6 {
+    padding: 1rem;
+  }
+
+  // Make inputs full width
+  input[type="date"] {
+    width: 100%;
+  }
+
+  // Reduce gap between grid items
+  .gap-4 {
+    gap: 0.75rem;
+  }
+
+  // Hide table scrollbar hint on mobile
+  .overflow-x-auto {
+    scrollbar-width: thin;
+  }
+}
+
+// Smooth transitions
+button {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// Card hover effects
+.hover\:shadow-md {
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+}
