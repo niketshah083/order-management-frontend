@@ -6,6 +6,8 @@ import { BillingService, BillingItem } from '../../services/billing.service';
 import { CustomerService, Customer } from '../../services/customer.service';
 import { InventoryService } from '../../services/inventory.service';
 import { ItemService, ApiItem } from '../../services/item.service';
+import { AddCustomerFormComponent } from '../shared/add-customer-form.component';
+import { ModalComponent } from '../shared/ui/modal.component';
 import { environment } from '../../../environments/environment';
 
 interface BatchOption {
@@ -42,7 +44,7 @@ interface QuickItem {
 @Component({
   selector: 'app-quick-invoice',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, AddCustomerFormComponent, ModalComponent],
   templateUrl: './quick-invoice.component.html',
   styleUrls: ['./quick-invoice.component.scss']
 })
@@ -71,6 +73,10 @@ export class QuickInvoiceComponent implements OnInit {
   // Batch selector modal
   showBatchModal = signal(false);
   selectedItemForBatch = signal<QuickItem | null>(null);
+
+  // New customer modal
+  showNewCustomerModal = signal(false);
+  isCreatingCustomer = signal(false);
 
   // Selected customer
   selectedCustomer = signal<Customer | null>(null);
@@ -315,6 +321,7 @@ export class QuickInvoiceComponent implements OnInit {
   closeBatchModal() {
     this.showBatchModal.set(false);
     this.selectedItemForBatch.set(null);
+    this.pendingQuantity = 0; // Reset pending quantity when modal is closed
   }
 
   selectBatch(item: QuickItem, batch: BatchOption) {
@@ -328,19 +335,28 @@ export class QuickInvoiceComponent implements OnInit {
     // For serial tracked items, auto-set quantity to 1
     if (item.hasSerialTracking && batch.serialNumber) {
       item.quantity = 1;
+    } else if (this.pendingQuantity > 0) {
+      // Apply the pending quantity that was entered before batch selection
+      item.quantity = Math.min(this.pendingQuantity, batch.quantity);
+      this.pendingQuantity = 0; // Reset pending quantity
+    } else if (item.quantity === 0) {
+      // If no pending quantity and current is 0, set to 1 as default
+      item.quantity = 1;
     }
 
     this.items.update((items) => [...items]);
     this.closeBatchModal();
   }
 
+  // Store pending quantity when batch selection is needed
+  private pendingQuantity = 0;
+
   onQuantityChange(item: QuickItem, value: number) {
     // If trying to set quantity > 0 and batch selection is required
     if (value > 0 && (item.hasBatchTracking || item.hasSerialTracking) && !item.selectedBatch) {
-      // If multiple batches, open selector
+      // If multiple batches, open selector and store the pending quantity
       if (item.batches.length > 1) {
-        item.quantity = 0; // Reset quantity until batch is selected
-        this.items.update((items) => [...items]);
+        this.pendingQuantity = value; // Store the quantity user wants to set
         this.openBatchSelector(item);
         return;
       }
@@ -480,6 +496,39 @@ export class QuickInvoiceComponent implements OnInit {
 
   clearCustomer() {
     this.selectedCustomer.set(null);
+  }
+
+  // New Customer Modal Methods
+  openNewCustomerModal() {
+    this.showCustomerDropdown.set(false);
+    this.showNewCustomerModal.set(true);
+  }
+
+  closeNewCustomerModal() {
+    this.showNewCustomerModal.set(false);
+  }
+
+  onCustomerFormSubmitted(customerData: Partial<Customer>) {
+    this.isCreatingCustomer.set(true);
+    this.customerService.createCustomer(customerData).subscribe({
+      next: (response) => {
+        const newCustomer = response.data;
+        // Add to customers list
+        this.customers.update((customers) => [newCustomer, ...customers]);
+        // Select the new customer
+        this.selectedCustomer.set(newCustomer);
+        this.isCreatingCustomer.set(false);
+        this.closeNewCustomerModal();
+        this.successMessage.set('Customer created successfully!');
+        setTimeout(() => this.successMessage.set(''), 3000);
+      },
+      error: (err) => {
+        console.error('Failed to create customer:', err);
+        this.errorMessage.set(err.error?.message || 'Failed to create customer');
+        this.isCreatingCustomer.set(false);
+        setTimeout(() => this.errorMessage.set(''), 5000);
+      }
+    });
   }
 
   setPaymentType(type: 'cash' | 'credit') {

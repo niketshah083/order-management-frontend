@@ -112,7 +112,7 @@ import { PaymentService } from '../../services/payment.service';
                     </td>
                     <td class="px-6 py-4 text-center">
                       <div class="flex gap-2 justify-center flex-wrap">
-                        @if (bill.approvalStatus === 'draft' || bill.status === 'draft') {
+                        @if ((bill.approvalStatus === 'draft' || !bill.approvalStatus) && bill.status !== 'completed' && bill.status !== 'approved') {
                           <button
                             (click)="editBilling(bill.id!)"
                             class="px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-all active:scale-95"
@@ -128,13 +128,15 @@ import { PaymentService } from '../../services/payment.service';
                             ✅ Complete
                           </button>
                         }
-                        <button
-                          (click)="downloadBillPDF(bill.id!)"
-                          class="px-3 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-all active:scale-95"
-                          title="Download Invoice PDF"
-                        >
-                          📥 Download
-                        </button>
+                        @if (bill.approvalStatus === 'approved' || bill.status === 'completed' || bill.status === 'approved') {
+                          <button
+                            (click)="downloadBillPDF(bill.id!)"
+                            class="px-3 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-all active:scale-95"
+                            title="Download Invoice PDF"
+                          >
+                            📥 Download
+                          </button>
+                        }
                         @if (bill.paymentType === 'online' && bill.paymentStatus !== 'completed') {
                           <button
                             (click)="payOnline(bill)"

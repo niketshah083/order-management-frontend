@@ -110,7 +110,7 @@ interface LocationData {
             />
           </div>
           <div>
-            <label class="text-sm font-semibold text-gray-700">Pincode</label>
+            <label class="text-sm font-semibold text-gray-700">Pincode <span class="text-red-500">*</span></label>
             <div class="flex gap-2">
               <input
                 type="text"

@@ -121,7 +121,11 @@
             (focus)="showCustomerDropdown.set(true)"
             class="customer-input"
           />
-          <div class="customer-dropdown" *ngIf="showCustomerDropdown() && filteredCustomers().length > 0">
+          <div class="customer-dropdown" *ngIf="showCustomerDropdown() && (filteredCustomers().length > 0 || customerSearchQuery())">
+            <div class="add-customer-option" (click)="openNewCustomerModal()">
+              <span class="add-icon">➕</span>
+              <span>Add New Customer</span>
+            </div>
             <div *ngFor="let customer of filteredCustomers()" class="customer-option" (click)="selectCustomer(customer)">
               <span class="customer-name">{{ customer.firstname }} {{ customer.lastname }}</span>
               <span class="customer-mobile">{{ customer.mobileNo }}</span>
@@ -250,4 +254,9 @@
       </div>
     </div>
   </div>
+
+  <!-- New Customer Modal -->
+  <app-modal [isOpen]="showNewCustomerModal()" (close)="closeNewCustomerModal()" title="Add New Customer">
+    <app-add-customer-form [isEditing]="false" (submitted)="onCustomerFormSubmitted($event)" (cancelled)="closeNewCustomerModal()"></app-add-customer-form>
+  </app-modal>
 </div>
