@@ -183,7 +183,7 @@ export class AddCustomerFormComponent implements OnInit {
   successMessage = signal('');
   formSubmitAttempted = false;
 
-  // Only mobileNo and firstname are required
+  // mobileNo, firstname, and pincode are required
   customerForm = this.fb.group({
     mobileNo: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
     firstname: ['', Validators.required],
@@ -193,7 +193,7 @@ export class AddCustomerFormComponent implements OnInit {
     addressLine2: [''],
     city: [''],
     state: [''],
-    pincode: ['', Validators.pattern('^[0-9]{6}$')]
+    pincode: ['', [Validators.required, Validators.pattern('^[0-9]{6}$')]]
   });
 
   ngOnInit() {
@@ -222,6 +222,7 @@ export class AddCustomerFormComponent implements OnInit {
     if (field.errors['required']) {
       if (fieldName === 'mobileNo') return 'Mobile number is required';
       if (fieldName === 'firstname') return 'First name is required';
+      if (fieldName === 'pincode') return 'Pincode is required';
       return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
     }
     if (field.errors['email']) {
